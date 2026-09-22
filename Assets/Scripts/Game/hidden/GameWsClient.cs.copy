@@ -1,0 +1,113 @@
+using UnityEngine;
+using NativeWebSocket;
+using System.Text;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+
+public class GameWsClient : MonoBehaviour
+{
+    [Header("WebSocket")]
+    public string wsUrl = "ws://localhost:8000/ws/game"; // URL WebSocket
+    private WebSocket ws;
+
+
+    // События для GameController
+    public System.Action OnSendRequested;            // сервер ждёт корабли
+    public System.Action OnStartGame;                // игра началась
+    public System.Action<TurnMessage> OnTurnMessage; // ход игрока
+    public System.Action<HitResultMessage> OnHitResult; // результат выстрела
+
+    async void Start()
+    {
+        // если токен не задан, загрузим из файла
+        string token = TokenStorage.Load();
+
+        ws = new WebSocket(wsUrl + "?token=" + token);
+
+        ws.OnOpen += () => Debug.Log("WS connected");
+        ws.OnError += (e) => Debug.LogError("WS Error: " + e);
+        ws.OnClose += (e) => Debug.Log("WS Closed: " + e);
+
+        ws.OnMessage += (bytes) =>
+        {
+            string msg = Encoding.UTF8.GetString(bytes);
+            Debug.Log("WS IN: " + msg);
+            HandleMessage(msg);
+        };
+
+        await ws.Connect();
+    }
+
+    void Update()
+    {
+    #if !UNITY_WEBGL || UNITY_EDITOR
+        ws?.DispatchMessageQueue();
+    #endif
+    }
+
+    private void HandleMessage(string msg)
+    {
+        //var data = TextToDict.ConvertToDictionary(msg);
+        //Debug.Log(data);
+        var turn = JsonConvert.DeserializeObject<TurnMessage>(msg);
+
+        if (turn.TURN == "SEND")
+        {
+            SendPlacement(PlacementData.ShipCells);
+            return;
+        }
+
+        if (turn.TURN == "YOUR_TURN")
+        {
+            OnTurnMessage?.Invoke(turn);
+            return;
+        }
+
+    }
+
+    // Отправляем свои координаты кораблей
+    public void SendPlacement(List<Vector2Int> cells)
+    {
+    var arr = new List<int[]>();
+
+    foreach (var c in cells)
+    {
+        arr.Add(new int[] { c.x, c.y });
+    }
+
+    string json = JsonConvert.SerializeObject(arr);
+
+    ws.SendText(json);
+    Debug.Log("Placement sent: " + json);
+    }
+
+    // Отправляем выстрел
+    public void SendShot(int x, int y)
+    {
+        var req = new ShotRequest { x = x, y = y };
+        string json = JsonConvert.SerializeObject(req);
+        ws.SendText(json);
+        Debug.Log("Shot sent: " + json);
+    }
+}
+
+// DTO
+[System.Serializable]
+public class TurnMessage
+{
+    public string TURN; // "YOUR_TURN" | "OPPONENT_TURN"
+    public int[] OPPONENT_LAST_HIT; // [x,y] или null
+}
+
+[System.Serializable]
+public class HitResultMessage
+{
+    public int HIT; // 1 или 0
+}
+
+[System.Serializable]
+public class ShotRequest
+{
+    public int x;
+    public int y;
+}

@@ -1,0 +1,89 @@
+using UnityEngine;
+using System.Collections.Generic;
+using TMPro;
+
+public class GameController : MonoBehaviour
+{
+    public GameWsClient ws;
+
+    public GameGridController myGrid;
+    public GameGridController enemyGrid;
+
+    public TextMeshProUGUI statusText;
+
+    private bool myTurn = false;
+    private Vector2Int? pendingShot;
+
+    void Start()
+    {
+        LoadMyShips();
+        // Подписка на события WebSocket
+        ws.OnSendRequested += SendPlacement;
+        ws.OnStartGame += OnStart;
+        ws.OnTurnMessage += OnTurn;
+        ws.OnHitResult += OnHitResult;
+        
+        statusText.text = "Поиск игрока...";
+    }
+
+    private void SendPlacement()
+    {
+        statusText.text = "Отправка кораблей...";
+        ws.SendPlacement(PlacementData.ShipCells);
+    }
+
+    private void OnStart()
+    {
+        statusText.text = "Игра началась!";
+    }
+
+    public void HandleOpponentLastHit(string coordStr)
+    {
+        // Простейший парсер "[x,y]"
+        coordStr = coordStr.Trim('[', ']');
+        var parts = coordStr.Split(',');
+        Vector2Int coord = new Vector2Int(int.Parse(parts[0]), int.Parse(parts[1]));
+
+        if (PlacementData.ShipCells.Contains(coord))
+            myField.SetCell(coord, GameCellState.Hit);
+        else
+            myField.SetCell(coord, GameCellState.Miss);
+    }
+
+
+    // Клик по клетке противника
+    public void OnEnemyCellClicked(int x, int y)
+    {
+        Debug.Log("hello");
+        if (!myTurn)
+            return;
+        Debug.Log("hello");
+        pendingShot = new Vector2Int(x, y);
+        ws.SendShot(x, y);
+
+        myTurn = false;
+        statusText.text = "Ожидание ответа...";
+    }
+
+    private void OnHitResult(HitResultMessage msg)
+    {
+        if (pendingShot == null)
+            return;
+
+        var p = pendingShot.Value;
+
+        if (msg.HIT == 1)
+            enemyGrid.MarkHit(p.x, p.y, true);
+        else
+            enemyGrid.MarkHit(p.x, p.y, false);
+
+        pendingShot = null;
+    }
+    void LoadMyShips()
+    {
+        foreach (var cell in PlacementData.ShipCells)
+        {
+            myGrid.ShowShip(cell.x, cell.y);
+        }
+    }
+}
