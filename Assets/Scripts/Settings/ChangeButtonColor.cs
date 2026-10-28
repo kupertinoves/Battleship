@@ -3,7 +3,9 @@ using UnityEngine.UI;
 
 public class ToggleButtonColor : MonoBehaviour
 {
-    public Button button;
+    [SerializeField] Button button;
+    [SerializeField] Color selectedColor;
+    [SerializeField] Color unselectedColor;
     private bool isGreen = false;
 
     void OnButtonClick()
@@ -14,13 +16,10 @@ public class ToggleButtonColor : MonoBehaviour
 
     void UpdateColor()
     {
+        if (button == null) return;
+
         ColorBlock colors = button.colors;
-
-        if (isGreen)
-            colors.normalColor = Color.green;
-        else
-            colors.normalColor = Color.red;
-
+        colors.normalColor = isGreen ? selectedColor : unselectedColor;
         button.colors = colors;
     }
 }

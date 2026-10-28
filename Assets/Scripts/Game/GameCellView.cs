@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public enum GameCellState
 {
@@ -14,38 +15,30 @@ public class GameCellView : MonoBehaviour
 {
     public Vector2Int Coord;
 
-    [Header("Colors")]
-    public Color emptyColor = Color.white;  // делаем сразу белым
-    public Color shipColor = Color.gray;
-    public Color missColor = Color.blue;
-    public Color hitColor = Color.red;
+    [Header("Prefab references")]
+    [SerializeField] Image image;
+    [SerializeField] TMP_Text marker;
+
+    [Header("Cell colors")]
+    [SerializeField] Color emptyColor;
+    [SerializeField] Color shipColor;
+    [SerializeField] Color missColor;
+    [SerializeField] Color hitColor;
 
     private GameCellState state;
 
-    private Image image;
-
     private void Awake()
     {
-        // Создаем компонент Image, если его нет
-        image = GetComponent<Image>();
-        if (image == null)
-        {
-            image = gameObject.AddComponent<Image>();
-        }
-
-        // Цвет по умолчанию
-        image.color = emptyColor;
-
-        // Если нужен Button для клика по enemyField, можно добавить
-        if (GetComponent<Button>() == null)
-        {
-            gameObject.AddComponent<Button>();
-        }
+        if (image == null) image = GetComponent<Image>();
+        if (marker == null) marker = GetComponentInChildren<TMP_Text>(true);
+        if (marker != null) marker.text = string.Empty;
+        if (image != null) image.color = emptyColor;
     }
 
     public void SetState(GameCellState newState)
     {
         state = newState;
+        if (marker != null) marker.text = state == GameCellState.Hit ? "×" : state == GameCellState.Miss ? "•" : "";
 
         if (image == null) return; // защита на всякий случай
 

@@ -135,11 +135,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameCellView
   Coord: {x: 0, y: 0}
-  image: {fileID: 0}
-  emptyColor: {r: 0, g: 0, b: 1, a: 1}
-  shipColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  missColor: {r: 1, g: 1, b: 1, a: 1}
-  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  image: {fileID: 8331267857158242286}
+  marker: {fileID: 2320843355566799146}
+  emptyColor: {r: 0.1059, g: 0.2235, b: 0.298, a: 1}
+  shipColor: {r: 0.2235, g: 0.6627, b: 0.7059, a: 1}
+  missColor: {r: 0.1647, g: 0.2667, b: 0.3333, a: 1}
+  hitColor: {r: 0.7098, g: 0.2863, b: 0.2196, a: 1}
 --- !u!1 &8238196787418628479
 GameObject:
   m_ObjectHideFlags: 0
@@ -198,7 +199,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9, g: 0.94, b: 0.95, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -232,7 +233,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
+  m_fontSize: 28
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0

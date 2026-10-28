@@ -57,6 +57,25 @@ public static class PlacementValidator
             }
         }
 
+        if (allCells.Count != 20)
+        {
+            error = $"Нужно разместить ровно 20 клеток кораблей. Сейчас: {allCells.Count}";
+            return false;
+        }
+
+        // Корабли не должны соприкасаться по диагонали.
+        for (int x = 0; x < size; x++)
+        for (int y = 0; y < size; y++)
+        {
+            if (grid[x, y] != CellState.Ship) continue;
+            if (x + 1 < size && y + 1 < size && grid[x + 1, y + 1] == CellState.Ship ||
+                x + 1 < size && y - 1 >= 0 && grid[x + 1, y - 1] == CellState.Ship)
+            {
+                error = "Корабли не должны соприкасаться по диагонали";
+                return false;
+            }
+        }
+
         // Проверяем количество кораблей каждого размера
         foreach (var rule in Rules)
         {

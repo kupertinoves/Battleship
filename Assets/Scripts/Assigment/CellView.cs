@@ -6,6 +6,10 @@ public class CellView : MonoBehaviour
     public int x;
     public int y;
 
+    [Header("Cell colors")]
+    [SerializeField] Color emptyColor;
+    [SerializeField] Color shipColor;
+
     private bool hasShip = false;
     private Image image;
 
@@ -30,8 +34,22 @@ public class CellView : MonoBehaviour
         OnCellToggled?.Invoke(x, y, hasShip);
     }
 
+    public void SetShip(bool value)
+    {
+        hasShip = value;
+        UpdateVisual();
+        OnCellToggled?.Invoke(x, y, hasShip);
+    }
+
+    public void SetShipWithoutNotify(bool value)
+    {
+        hasShip = value;
+        UpdateVisual();
+    }
+
     void UpdateVisual()
     {
-        image.color = hasShip ? Color.gray : Color.white;
+        if (image == null) return;
+        image.color = hasShip ? shipColor : emptyColor;
     }
 }
