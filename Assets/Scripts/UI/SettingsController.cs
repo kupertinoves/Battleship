@@ -16,6 +16,17 @@ public sealed class SettingsController : MonoBehaviour
     [SerializeField] Toggle fullscreenToggle;
     [SerializeField] Button resetButton;
 
+    // Preferences must take effect even when the settings scene is never opened.
+    // This hook changes application state only; all controls remain scene-authored.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void ApplySavedSettings()
+    {
+        float volume = Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey, DefaultVolume));
+        AudioListener.volume = PlayerPrefs.GetInt(SoundKey, 1) != 0 ? volume : 0f;
+        if (PlayerPrefs.HasKey(FullscreenKey))
+            Screen.fullScreen = PlayerPrefs.GetInt(FullscreenKey) != 0;
+    }
+
     void OnEnable()
     {
         if (volumeSlider != null) volumeSlider.onValueChanged.AddListener(SetVolume);
@@ -33,8 +44,7 @@ public sealed class SettingsController : MonoBehaviour
         if (volumeSlider != null) volumeSlider.SetValueWithoutNotify(volume);
         if (soundToggle != null) soundToggle.SetIsOnWithoutNotify(soundEnabled);
         if (fullscreenToggle != null) fullscreenToggle.SetIsOnWithoutNotify(fullscreen);
-        AudioListener.volume = soundEnabled ? volume : 0f;
-        Screen.fullScreen = fullscreen;
+        ApplySavedSettings();
         UpdateVolumeLabel(volume);
     }
 
