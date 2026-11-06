@@ -8,9 +8,6 @@ using TMPro;
 public class ChangePassword : MonoBehaviour
 {
 
-    [Header("API")]
-    public string AuthUrl = "http://localhost:8000";
-
     [Header("OldPassword")]
     public TMP_InputField OldPassword;
 
@@ -43,7 +40,7 @@ public class ChangePassword : MonoBehaviour
         };
         string json = JsonUtility.ToJson(data);
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
-        var request = new UnityWebRequest(AuthUrl, "POST");
+        var request = new UnityWebRequest(ServerConfig.ChangePasswordUrl, "POST");
         // ✅ Проверяем токен
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -53,7 +50,13 @@ public class ChangePassword : MonoBehaviour
             "Bearer " + token
         );
 
+        request.timeout = 15;
         yield return request.SendWebRequest();
+        if (request.result == UnityWebRequest.Result.ConnectionError)
+        {
+            Error.text = "Нет соединения с сервером";
+            yield break;
+        }
         if (request.responseCode==409){
             Debug.Log("Incorrect pass");
             var err = JsonUtility.FromJson<ChangePasswordErrorDetail>(request.downloadHandler.text);
@@ -63,17 +66,17 @@ public class ChangePassword : MonoBehaviour
         }
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("Token valid");
-            Debug.Log(request.downloadHandler.text);
             SceneManager.LoadScene("Account");
+        }
+        else if (request.responseCode == 401)
+        {
+            // токен протух / невалиден
+            TokenStorage.Clear();
+            SceneManager.LoadScene("Auth");
         }
         else
         {
-            Debug.Log("Token invalid: " + request.responseCode);
-
-            // ❌ Токен протух / невалиден
-            TokenStorage.Clear();
-            SceneManager.LoadScene("Auth");
+            Error.text = "Ошибка сервера (" + request.responseCode + ")";
         }
     }
 }

@@ -8,7 +8,6 @@ using UnityEngine.SceneManagement;
 public class GameWsClient : MonoBehaviour
 {
     [Header("WebSocket")]
-    public string wsUrl = "ws://localhost:8000/ws/game"; // URL WebSocket
     private WebSocket ws;
     public TextMeshProUGUI statusText;
 
@@ -19,25 +18,37 @@ public class GameWsClient : MonoBehaviour
     public System.Action<TurnMessage> OPPONENT_LAST_HIT; // ход игрока
     public System.Action<HitResultMessage> OnHitResult; // результат выстрела
 
+    bool finished, destroyed;
+    const int MaxAttempts = 5;
+
     async void Start()
     {
-        // если токен не задан, загрузим из файла
-        string token = TokenStorage.Load();
-
-        ws = new WebSocket(wsUrl + "?token=" + token);
-
-        ws.OnOpen += () => Debug.Log("WS connected");
-        ws.OnError += (e) => Debug.LogError("WS Error: " + e);
-        ws.OnClose += (e) => Debug.Log("WS Closed: " + e);
-
-        ws.OnMessage += (bytes) =>
+        for (int attempt = 1; attempt <= MaxAttempts && !finished && !destroyed; attempt++)
         {
-            string msg = Encoding.UTF8.GetString(bytes);
-            Debug.Log("WS IN: " + msg);
-            HandleMessage(msg);
-        };
+            // токен перечитываем на каждой попытке
+            string token = TokenStorage.Load();
+            ws = new WebSocket(ServerConfig.GameWsUrl + "?token=" + token);
 
-        await ws.Connect();
+            ws.OnOpen += () => Debug.Log("WS connected");
+            ws.OnError += (e) => Debug.LogWarning("WS Error: " + e);
+            ws.OnClose += (e) => Debug.Log("WS Closed: " + e);
+            ws.OnMessage += (bytes) =>
+            {
+                string msg = Encoding.UTF8.GetString(bytes);
+                Debug.Log("WS IN: " + msg);
+                HandleMessage(msg);
+            };
+
+            try { await ws.Connect(); }   // возвращается, когда соединение закрыто
+            catch (System.Exception e) { Debug.LogWarning("WS connect failed: " + e.Message); }
+
+            if (finished || destroyed) return;
+            if (attempt == MaxAttempts) break;
+            if (statusText != null) statusText.text = "Соединение потеряно. Повторное подключение...";
+            await System.Threading.Tasks.Task.Delay(3000);
+        }
+        if (!finished && !destroyed && statusText != null)
+            statusText.text = "Нет соединения с сервером";
     }
 
     void Update()
@@ -47,11 +58,31 @@ public class GameWsClient : MonoBehaviour
     #endif
     }
 
+    System.Collections.IEnumerator LoadAfterDelay(string scene)
+    {
+        yield return new WaitForSeconds(3f);
+        SceneManager.LoadScene(scene);
+    }
+
+    async void OnDestroy()
+    {
+        destroyed = true;
+        if (ws != null && ws.State == WebSocketState.Open) await ws.Close();
+    }
+
     private void HandleMessage(string msg)
     {
         //var data = TextToDict.ConvertToDictionary(msg);
         //Debug.Log(data);
-        var turn = JsonConvert.DeserializeObject<TurnMessage>(msg);
+        // сервер иногда присылает текст-обёртку ("Game over: {...}") или JSON с одинарными кавычками
+        int brace = msg.IndexOf('{');
+        if (brace < 0) { Debug.LogWarning("WS: сообщение без JSON: " + msg); return; }
+        msg = msg.Substring(brace);
+
+        TurnMessage turn;
+        try { turn = JsonConvert.DeserializeObject<TurnMessage>(msg); }
+        catch (System.Exception e) { Debug.LogWarning("WS: не удалось разобрать сообщение: " + e.Message); return; }
+        if (turn == null || string.IsNullOrEmpty(turn.TURN)) return;
 
         if (turn.TURN == "SEND")
         {
@@ -77,17 +108,16 @@ public class GameWsClient : MonoBehaviour
             return;
         }
         if (turn.TURN=="WIN" ||  turn.TURN=="LOST"){
+            finished = true;
             if (turn.TURN=="WIN"){
                 statusText.text="Ты победил!";
                 ws.Close();
-                System.Threading.Tasks.Task.Delay(5000);
-                SceneManager.LoadScene("Win");
+                StartCoroutine(LoadAfterDelay("Win"));
                 return;
             }else{
                 statusText.text="Ты проиграл";
                 ws.Close();
-                System.Threading.Tasks.Task.Delay(5000);
-                SceneManager.LoadScene("Defeat");
+                StartCoroutine(LoadAfterDelay("Defeat"));
                 return;
             }
             //ws.Close();
@@ -96,10 +126,10 @@ public class GameWsClient : MonoBehaviour
             //return;
         }
         if (turn.TURN=="DISCONNECT"){
+            finished = true;
             ws.Close();
             statusText.text="Технические проблемы...";
-            System.Threading.Tasks.Task.Delay(5000);
-            SceneManager.LoadScene("MainMenu");
+            StartCoroutine(LoadAfterDelay("MainMenu"));
             return;
         }
 

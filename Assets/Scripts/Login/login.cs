@@ -9,7 +9,6 @@ public class LoginController : MonoBehaviour
     [Header("UI")]
     public TMP_InputField loginInput;
     public TMP_InputField passwordInput;
-    public string authUrl = "http://localhost:8000/register";
     public TMP_Text errorText;
 
     public void LoadNextScene()
@@ -25,33 +24,25 @@ public class LoginController : MonoBehaviour
     IEnumerator Login()
     {
         errorText.text = "";
-        var data = new LoginRequest
-        {
-            username = loginInput.text,
-            password = passwordInput.text,
-            //email = emailInput != null ? emailInput.text : null
-        };
-        Debug.Log("login: " + loginInput.text);
-        Debug.Log("password: " + passwordInput.text);
+        var form = new WWWForm();
+        form.AddField("username", loginInput.text);
+        form.AddField("password", passwordInput.text);
 
-        string body = "username="+loginInput.text+"&password="+passwordInput.text;
-        Debug.Log(body);
-
-        var request = new UnityWebRequest(authUrl, "POST");
-        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(body);
-
-        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        using var request = UnityWebRequest.Post(ServerConfig.LoginUrl, form);
+        request.timeout = 15;
 
         yield return request.SendWebRequest();
-        Debug.Log(request.responseCode);
+
+        if (request.result == UnityWebRequest.Result.ConnectionError)
+        {
+            errorText.text = "Нет соединения с сервером";
+            yield break;
+        }
 
         if (request.responseCode == 401)
         {
             var err = JsonUtility.FromJson<LoginErrorResponse>(request.downloadHandler.text);
-            Debug.Log(request.downloadHandler.text);
-            errorText.text = err.detail;
+            errorText.text = string.IsNullOrEmpty(err?.detail) ? "Неверный логин или пароль" : err.detail;
             yield break;
         }
 
@@ -62,8 +53,6 @@ public class LoginController : MonoBehaviour
             yield break;
         }
         if (request.responseCode==200){
-            Debug.Log("YES");
-            Debug.Log(request.downloadHandler.text);
             TokenStorage.Save(request.downloadHandler.text);
             LoadNextScene();
         }

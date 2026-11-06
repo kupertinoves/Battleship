@@ -75,14 +75,15 @@ public class GameUIController : MonoBehaviour
         k+=1;
         canShoot=true;
         Debug.Log(canShoot);
-        if (msg.OPPONENT_LAST_HIT=="[]") return;
+        if (string.IsNullOrEmpty(msg.OPPONENT_LAST_HIT) || msg.OPPONENT_LAST_HIT=="[]") return;
         string coordStr=msg.OPPONENT_LAST_HIT;
         coordStr = coordStr.Trim('[', ']');
         var parts = coordStr.Split(',');
 
         if (parts.Length != 2) return;
 
-        Vector2Int coord = new Vector2Int(int.Parse(parts[0]), int.Parse(parts[1]));
+        if (!int.TryParse(parts[0].Trim(), out int cx) || !int.TryParse(parts[1].Trim(), out int cy)) return;
+        Vector2Int coord = new Vector2Int(cx, cy);
 
         if (PlacementData.ShipCells.Contains(coord))
             myField.SetCell(coord, GameCellState.Hit);

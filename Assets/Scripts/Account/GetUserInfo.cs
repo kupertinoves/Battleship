@@ -8,9 +8,6 @@ using TMPro;
 public class GetUserInfo : MonoBehaviour
 {
 
-    [Header("API")]
-    public string AuthUrl = "http://localhost:8000";
-
     [Header("Login")]
     public TMP_Text Login;
 
@@ -34,31 +31,33 @@ public class GetUserInfo : MonoBehaviour
         }
         // ✅ Проверяем токен
         UnityWebRequest request =
-            UnityWebRequest.Get(AuthUrl);
+            UnityWebRequest.Get(ServerConfig.UserInfoUrl);
 
         request.SetRequestHeader(
             "Authorization",
             "Bearer " + token
         );
 
+        request.timeout = 15;
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("Token valid");
-            Debug.Log(request.downloadHandler.text);
             var user = JsonUtility.FromJson<UserInfoResponse>(request.downloadHandler.text);
 
             Login.text = user.login;
             Email.text=user.email;
         }
-        else
+        else if (request.responseCode == 401)
         {
-            Debug.Log("Token invalid: " + request.responseCode);
-
-            // ❌ Токен протух / невалиден
+            // токен протух / невалиден
             TokenStorage.Clear();
             SceneManager.LoadScene("Auth");
+        }
+        else
+        {
+            Login.text = "—";
+            Email.text = "Нет соединения с сервером";
         }
     }
 }

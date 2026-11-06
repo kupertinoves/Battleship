@@ -10,7 +10,6 @@ public class AuthController : MonoBehaviour
     public TMP_InputField loginInput;
     public TMP_InputField passwordInput;
     public TMP_InputField emailInput; // может быть null для логина
-    public string authUrl = "http://localhost:8000/register";
     public TMP_Text errorText;
 
     public void LoadNextScene()
@@ -35,7 +34,7 @@ public class AuthController : MonoBehaviour
 
         string json = JsonUtility.ToJson(data);
 
-        var request = new UnityWebRequest(authUrl, "POST");
+        var request = new UnityWebRequest(ServerConfig.RegisterUrl, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
 
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);

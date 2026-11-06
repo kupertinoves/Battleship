@@ -6,9 +6,6 @@ using System.Collections;
 public class AuthBootstrap : MonoBehaviour
 {
 
-    [Header("API")]
-    public string AuthUrl = "http://localhost:8000";
-
     public void OnSubmit()
     {
         StartCoroutine(CheckAuth());
@@ -27,27 +24,25 @@ public class AuthBootstrap : MonoBehaviour
 
         // ✅ Проверяем токен
         UnityWebRequest request =
-            UnityWebRequest.Get(AuthUrl);
+            UnityWebRequest.Get(ServerConfig.CheckTokenUrl);
 
         request.SetRequestHeader(
             "Authorization",
             "Bearer " + token
         );
 
+        request.timeout = 15;
         yield return request.SendWebRequest();
 
         // ✅ Токен валиден
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("Token valid");
             SceneManager.LoadScene("Account");
         }
         else
         {
-            Debug.Log("Token invalid: " + request.responseCode);
-
-            // ❌ Токен протух / невалиден
-            TokenStorage.Clear();
+            // 401 — токен невалиден; сетевые сбои токен не стирают
+            if (request.responseCode == 401) TokenStorage.Clear();
             SceneManager.LoadScene("Auth");
         }
     }

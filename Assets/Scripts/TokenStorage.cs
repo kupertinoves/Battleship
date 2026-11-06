@@ -33,10 +33,17 @@ public static class TokenStorage
         if (!File.Exists(FilePath))
             return null;
 
-        string json = File.ReadAllText(FilePath);
-        var data = JsonUtility.FromJson<AuthData>(json);
-
-        return data.access_token;
+        try
+        {
+            string json = File.ReadAllText(FilePath);
+            var data = JsonUtility.FromJson<AuthData>(json);
+            return data != null ? data.access_token : null;
+        }
+        catch (System.Exception)
+        {
+            // повреждённый файл токена — считаем, что токена нет
+            return null;
+        }
     }
 
     /// <summary>

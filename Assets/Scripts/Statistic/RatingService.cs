@@ -4,16 +4,12 @@ using System.Collections;
 
 public class RatingService : MonoBehaviour
 {
-    [SerializeField]
-    private string ratingUrl =
-        "https://your-api.com/rating/top10";
-
     public IEnumerator GetTopPlayers(
         string jwtToken,
         System.Action<PlayerRating[]> onSuccess,
         System.Action<string> onError)
     {
-        UnityWebRequest request = UnityWebRequest.Get(ratingUrl);
+        UnityWebRequest request = UnityWebRequest.Get(ServerConfig.RatingUrl);
 
         // JWT
         request.SetRequestHeader("Authorization", "Bearer " + jwtToken);
