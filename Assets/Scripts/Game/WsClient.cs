@@ -21,8 +21,33 @@ public class GameWsClient : MonoBehaviour
     bool finished, destroyed;
     const int MaxAttempts = 5;
 
+    // Токен живёт ~30 минут; после этого сервер отклоняет подключение. Проверяем через /auth/check.
+    static System.Threading.Tasks.Task<long> CheckTokenCode(string token)
+    {
+        var tcs = new System.Threading.Tasks.TaskCompletionSource<long>();
+        var req = UnityEngine.Networking.UnityWebRequest.Get(ServerConfig.CheckTokenUrl);
+        req.SetRequestHeader("Authorization", "Bearer " + token);
+        req.timeout = 10;
+        req.SendWebRequest().completed += _ => { tcs.TrySetResult(req.responseCode); req.Dispose(); };
+        return tcs.Task;
+    }
+
+    // true, если токен недействителен: показываем сообщение и возвращаем игрока на экран входа
+    async System.Threading.Tasks.Task<bool> HandleExpiredToken()
+    {
+        string token = TokenStorage.Load();
+        long code = string.IsNullOrEmpty(token) ? 401 : await CheckTokenCode(token);
+        if (destroyed || code != 401) return false;
+        finished = true;
+        TokenStorage.Clear();
+        if (statusText != null) statusText.text = "Сессия истекла. Войдите заново";
+        StartCoroutine(LoadAfterDelay("Auth"));
+        return true;
+    }
+
     async void Start()
     {
+        if (await HandleExpiredToken()) return;
         for (int attempt = 1; attempt <= MaxAttempts && !finished && !destroyed; attempt++)
         {
             // токен перечитываем на каждой попытке
@@ -43,6 +68,7 @@ public class GameWsClient : MonoBehaviour
             catch (System.Exception e) { Debug.LogWarning("WS connect failed: " + e.Message); }
 
             if (finished || destroyed) return;
+            if (await HandleExpiredToken()) return;
             if (attempt == MaxAttempts) break;
             if (statusText != null) statusText.text = "Соединение потеряно. Повторное подключение...";
             await System.Threading.Tasks.Task.Delay(3000);

@@ -66,7 +66,7 @@ public static class Loc
         var d = new Dictionary<string, string>();
         void A(string ru, string en) => d[Norm(ru)] = en;
 
-        A("Соединение потеряно. Повторное подключение...", "Connection lost. Reconnecting..."); A("Ожидание соединения…", "Waiting for connection…");
+        A("Соединение потеряно. Повторное подключение...", "Connection lost. Reconnecting..."); A("Ожидание соединения…", "Waiting for connection…"); A("Сессия истекла. Войдите заново", "Session expired. Please sign in again");
         A("Нет соединения с сервером", "No connection to the server"); A("Неверный логин или пароль", "Invalid login or password");
         // --- Общие / навигация ---
         A("В ГЛАВНОЕ МЕНЮ", "TO MAIN MENU"); A("В МЕНЮ", "TO MENU"); A("НА ГЛАВНУЮ", "HOME"); A("НАЗАД", "BACK");
