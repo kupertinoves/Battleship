@@ -7,8 +7,9 @@ public class CellView : MonoBehaviour
     public int y;
 
     [Header("Cell colors")]
-    [SerializeField] Color emptyColor;
-    [SerializeField] Color shipColor;
+    // Значения по умолчанию: в Cell.prefab цвета не заданы, и без них клетки были прозрачными.
+    [SerializeField] Color emptyColor = new Color(0.10f, 0.20f, 0.27f, 0.85f);
+    [SerializeField] Color shipColor = new Color(0.20f, 0.72f, 0.82f, 1f);
 
     private bool hasShip = false;
     private Image image;
@@ -18,6 +19,9 @@ public class CellView : MonoBehaviour
     void Awake()
     {
         image = GetComponent<Image>();
+        // если в префабе/сцене сохранены нулевые (прозрачные) цвета — используем значения по умолчанию
+        if (emptyColor.a <= 0f) emptyColor = new Color(0.10f, 0.20f, 0.27f, 0.85f);
+        if (shipColor.a <= 0f) shipColor = new Color(0.20f, 0.72f, 0.82f, 1f);
         UpdateVisual();
     }
 
