@@ -76,13 +76,10 @@ public class GameUIController : MonoBehaviour
         canShoot=true;
         Debug.Log(canShoot);
         if (string.IsNullOrEmpty(msg.OPPONENT_LAST_HIT) || msg.OPPONENT_LAST_HIT=="[]") return;
-        string coordStr=msg.OPPONENT_LAST_HIT;
-        coordStr = coordStr.Trim('[', ']');
-        var parts = coordStr.Split(',');
-
-        if (parts.Length != 2) return;
-
-        if (!int.TryParse(parts[0].Trim(), out int cx) || !int.TryParse(parts[1].Trim(), out int cy)) return;
+        // сервер возвращает выстрел как "[x,y]" или как {"x":0,"y":0} — берём два числа из строки
+        var nums = System.Text.RegularExpressions.Regex.Matches(msg.OPPONENT_LAST_HIT, @"-?\d+");
+        if (nums.Count != 2) return;
+        int cx = int.Parse(nums[0].Value), cy = int.Parse(nums[1].Value);
         Vector2Int coord = new Vector2Int(cx, cy);
 
         if (PlacementData.ShipCells.Contains(coord))

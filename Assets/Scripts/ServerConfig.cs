@@ -12,6 +12,8 @@ public static class ServerConfig
     public const int    AuthPort = 8000;
     public const string GameHost = "193.188.20.123";   // игровой менеджер
     public const int    GamePort = 8008;
+    public const string StatHost = "193.188.20.123";   // сервис статистики
+    public const int    StatPort = 8009;
     public const bool   UseTls   = false;              // true -> https/wss
     // ===========================================================
 
@@ -30,5 +32,9 @@ public static class ServerConfig
 
     // Игровой менеджер
     public static string GameWsUrl         => $"{Ws}://{GameHost}:{GamePort}/ws";
-    public static string RatingUrl         => GameBaseUrl + "/rating/top10";
+
+    // Статистика (GET - список игроков, POST add - прибавить результат матча текущему игроку)
+    public static string StatBaseUrl       => $"{Http}://{StatHost}:{StatPort}";
+    public static string RatingUrl         => StatBaseUrl + "/statistic";
+    public static string StatisticAddUrl   => StatBaseUrl + "/statistic/add";
 }

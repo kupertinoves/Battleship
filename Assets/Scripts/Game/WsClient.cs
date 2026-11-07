@@ -109,6 +109,7 @@ public class GameWsClient : MonoBehaviour
         }
         if (turn.TURN=="WIN" ||  turn.TURN=="LOST"){
             finished = true;
+            StatisticReporter.Report(turn.TURN == "WIN");
             if (turn.TURN=="WIN"){
                 statusText.text="Ты победил!";
                 ws.Close();
