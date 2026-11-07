@@ -11,9 +11,11 @@ public class GameGridView : MonoBehaviour
     {
         cells = new GameCellView[size, size];
 
-        for (int x = 0; x < size; x++)
+        // Порядок создания: строки (y), внутри - столбцы (x). GridLayoutGroup заполняет
+        // сетку по строкам, поэтому клетка (x,y) совпадает с экраном расстановки флота.
+        for (int y = 0; y < size; y++)
         {
-            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
             {
                 var cell = Instantiate(gameCellPrefab, transform);
                 cell.Coord = new Vector2Int(x, y);
